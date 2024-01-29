@@ -3,6 +3,8 @@ package frc.montylib.swerve.vendor;
 import frc.montylib.Chassis.Side;
 
 public class SDS {
+
+    /**A class storing configuration of the SDS Mark 4 Inverted Swerve Module */
     public class MK4i {
         public double PIVOT_GEAR_RATIO = 1 / 21.4285714286;
 
@@ -102,14 +104,14 @@ public class SDS {
             }
         }
 
-        public enum ModulePosition {
+        public enum ModuleLocation {
             LEFT_FRONT,
             RIGHT_FRONT,
             LEFT_BACK,
             RIGHT_BACK
         }
 
-        public static int[] getCanIDs(ModulePosition position) {
+        public static int[] getCanIDs(ModuleLocation position) {
             switch (position) {
                 case LEFT_FRONT: return new int[] {
                     Drive_Motor_Can_IDs[0],
@@ -135,7 +137,7 @@ public class SDS {
             }
         }
 
-        public static boolean getDriveMotorReversed(ModulePosition position, Side side_reversed) {
+        public static boolean getDriveMotorReversed(ModuleLocation position, Side side_reversed) {
             switch (position) {
                 case LEFT_FRONT: return side_reversed == Side.LEFT ? true : false;
                 case RIGHT_FRONT: return side_reversed == Side.RIGHT ? true : false;

@@ -1,7 +1,12 @@
 package frc.robot.subsystems.swerve;
 
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
+import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.montylib.hardware.NavX2;
 import frc.robot.subsystems.swerve.constants.SwerveConstants;
@@ -14,6 +19,13 @@ public class SwerveBase extends SubsystemBase{
     private REV_Module rightBackModule = new REV_Module(SwerveConstants.rightBackInterface);
 
     private NavX2 gyroscope = new NavX2();
+
+    private SwerveDriveOdometry odometer = new SwerveDriveOdometry(
+        SwerveConstants.kDriveKinematics, 
+        getRotation2d(), 
+        getModulePositions()
+    );
+    private Field2d fieldData = new Field2d();
 
     //GYROSCOPE AND ACCELEROMETER
     
@@ -38,7 +50,7 @@ public class SwerveBase extends SubsystemBase{
         return Rotation2d.fromDegrees(getHeading());
     }
 
-    //DRIVE WIDE UTILITY
+    //DRIVE WIDE UTILITY FUNCTION
 
     /**Stops module output */
     public void stopModules() {
@@ -77,5 +89,36 @@ public class SwerveBase extends SubsystemBase{
         };
     }
 
-    
+    //OUTPUT FUNCTIONS
+
+    /**
+     * Sets the output to the modules from the conversion of ChassisSpeeds to SwerveModuleState
+     * @param speeds the ChassisSpeeds that are converted to SwerveModuleStates
+     */
+    public void setDesiredSpeeds(ChassisSpeeds speeds) {
+        SwerveModuleState[] desiredStates = SwerveConstants.kDriveKinematics.toSwerveModuleStates(speeds);
+
+        SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, leftFrontModule.maxMechanicalSpeedMetersPerSecond);
+
+        leftFrontModule.setDesiredState(desiredStates[0]);
+        rightFrontModule.setDesiredState(desiredStates[1]);
+
+        leftBackModule.setDesiredState(desiredStates[2]);
+        rightBackModule.setDesiredState(desiredStates[3]);
+    }
+
+    //ODOMETRY AND POSE
+
+    /**
+     * Gets the ModulePositions in the form of an array 
+     * @return SwerveModulePosition in an array (LEFTFRONT, RIGHTFRONT, LEFTBACK, RIGHTBACK)
+     */
+    public SwerveModulePosition[] getModulePositions() {
+        return new SwerveModulePosition[] {
+            leftFrontModule.getModulePosition(),
+            rightFrontModule.getModulePosition(),
+            leftBackModule.getModulePosition(),
+            rightBackModule.getModulePosition()
+        };
+    }
 }

@@ -37,7 +37,7 @@ public class REV_Module {
   //Module Configuration Variables
   public boolean moduleEnabled = false;
   private Motors motor = null;
-  private double maxMechanicalSpeedMetersPerSecond = 0.0;
+  public double maxMechanicalSpeedMetersPerSecond = 0.0;
 
   /** Construcs a REV_Module with default values - NOT FOR ROBOT USE */
   public REV_Module() {}

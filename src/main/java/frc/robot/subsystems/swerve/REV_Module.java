@@ -356,6 +356,20 @@ public class REV_Module {
     }
   }
 
+  public void stopModule() {
+    if(moduleEnabled) {
+      switch (motor) {
+        case NEO_V1: 
+          driveNEOv1.stopMotor();
+          pivotNEOv1.stopMotor();
+        case NEO_VORTEX: 
+          driveVortex.stopMotor();
+          pivotVortex.stopMotor();
+        default: return;
+      }
+    }
+  }
+
   /**Configure the driveEncoder's conversion factors to change rotations to meters */
   public void configureDriveEncoder() {
     if(moduleEnabled) {

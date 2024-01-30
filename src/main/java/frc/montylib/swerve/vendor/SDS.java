@@ -6,7 +6,8 @@ public class SDS {
 
     /**A class storing configuration of the SDS Mark 4 Inverted Swerve Module */
     public class MK4i {
-        public double PIVOT_GEAR_RATIO = 1 / 21.4285714286;
+        public static double PIVOT_GEAR_RATIO = 1 / 21.4285714286;
+        public static double WHEEL_CIRCUMFERENCE = 4.0 * Math.PI;
 
         public enum Motors {
             NEO_V1,

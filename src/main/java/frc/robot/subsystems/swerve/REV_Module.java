@@ -84,7 +84,9 @@ public class REV_Module {
        * having a seperate RelativeEncoder object allows for us to change the conversion factors to get our desired units
        */
       driveEncoder = driveVortex.getEncoder();
+      configureDriveEncoder();
       pivotEncoder = pivotVortex.getEncoder();
+      configurePivotEncoder();
 
       // Enabling the module's processes involving the motors
       moduleEnabled = true;
@@ -101,7 +103,9 @@ public class REV_Module {
        * having a seperate RelativeEncoder object allows for us to change the conversion factors to get our desired units
        */
       driveEncoder = driveNEOv1.getEncoder();
+      configureDriveEncoder();
       pivotEncoder = pivotNEOv1.getEncoder();
+      configurePivotEncoder();
 
       // Enabling the module's processes involving the motors
       moduleEnabled = true;
@@ -143,6 +147,100 @@ public class REV_Module {
         pivot_controller_constants.kP,
         pivot_controller_constants.kI,
         pivot_controller_constants.kD
+      );
+  }
+
+  public REV_Module(
+    ModuleInterface moduleInterface
+  ) {
+    //Stores configuration values
+    int[] canIDs = MK4i.getCanIDs(moduleInterface.moduleLocation);
+    this.motor = moduleInterface.selectedMotor;
+
+    /*
+     * Checks the motor device type:
+     *
+     * if the motor device is NEO_VORTEX then it will define the NEOVortex objects
+     * if the motor device is NEO_V1 then it will define the NEOv1 objects
+     * if the motor device is neither NEO_VORTEX or NEO_V1 then it will report an error and disable the module's processes -
+     * involving the motors.
+     */
+    if (motor == Motors.NEO_VORTEX) {
+      //Defining the NEOVortex objects and Configuring the direction of the drive motor
+      driveVortex = new NEOVortex(canIDs[0]);
+      pivotVortex = new NEOVortex(canIDs[1]);
+      driveVortex.setInverted(
+        MK4i.getDriveMotorReversed(moduleInterface.moduleLocation, moduleInterface.invertedSide)
+      );
+
+      /*
+       * Defining the relative encoders as the encoders of the NEOVortex's encoders
+       * having a seperate RelativeEncoder object allows for us to change the conversion factors to get our desired units
+       */
+      driveEncoder = driveVortex.getEncoder();
+      configureDriveEncoder();
+      pivotEncoder = pivotVortex.getEncoder();
+      configurePivotEncoder();
+
+      // Enabling the module's processes involving the motors
+      moduleEnabled = true;
+    } else if (motor == Motors.NEO_V1) {
+      //Defining the NEOv1 objects and Configuring the direction of the drive motor
+      driveNEOv1 = new NEOv1(canIDs[0]);
+      pivotNEOv1 = new NEOv1(canIDs[1]);
+      driveNEOv1.setInverted(
+        MK4i.getDriveMotorReversed(moduleInterface.moduleLocation, moduleInterface.invertedSide)
+      );
+
+      /*
+       * Defining the relative encoders as the encoders of the NEOv1's encoders
+       * having a seperate RelativeEncoder object allows for us to change the conversion factors to get our desired units
+       */
+      driveEncoder = driveNEOv1.getEncoder();
+      configureDriveEncoder();
+      pivotEncoder = pivotNEOv1.getEncoder();
+      configurePivotEncoder();
+
+      // Enabling the module's processes involving the motors
+      moduleEnabled = true;
+    } else {
+      /*
+       * If the given motor device is not supported by this class it will report an error the the DriverStation
+       * and disable the module's processes involving the motor
+       */
+      DriverStation.reportError(
+        moduleInterface.moduleLocation.toString() + "Module motors provided are not REV Motors",
+        true
+      );
+      moduleEnabled = false;
+    }
+
+    /*
+     * Checks the AbsoluteEncoder device type:
+     * if the absolute_encoder device is CAN_CODER it will define the CANcoder object
+     * Otherwise it will disable the module and log an error to DriverStation
+     *
+     * NOTE: Currently, Thrifty Encoders are not supported
+     */
+    if (moduleInterface.selectedEncoder == AbsoluteEncoder.CAN_CODER) {
+      absoluteEncoder = new CANcoder(canIDs[3]);
+    } else {
+      DriverStation.reportError(
+        moduleInterface.moduleLocation.toString() + "Error with provided Absolute Encoder",
+        true
+      );
+      moduleEnabled = false;
+    }
+
+    //Defines the max mechanical speed given by the gear ratio and several physical aspects provided by SDS
+    maxMechanicalSpeedMetersPerSecond = MK4i.getMaxSpeed(motor, moduleInterface.moduleDriveGearRatio);
+
+    //Defines the Pivot Motion PID Controller with the given PIDConstants
+    pivotController =
+      new PIDController(
+        moduleInterface.pivotPIDConstants.kP,
+        moduleInterface.pivotPIDConstants.kI,
+        moduleInterface.pivotPIDConstants.kD
       );
   }
 
@@ -242,6 +340,43 @@ public class REV_Module {
       }
     } else {
       return;
+    }
+  }
+
+  public void autoZeroPivotEncoder() {
+    if(moduleEnabled) {
+      pivotEncoder.setPosition(getAbsolutePosition());
+    }
+  }
+
+  public void resetEncoders() {
+    if(moduleEnabled) {
+      pivotEncoder.setPosition(0);
+      driveEncoder.setPosition(0);
+    }
+  }
+
+  /**Configure the driveEncoder's conversion factors to change rotations to meters */
+  public void configureDriveEncoder() {
+    if(moduleEnabled) {
+      driveEncoder.setVelocityConversionFactor(
+        (MK4i.WHEEL_CIRCUMFERENCE * MK4i.getDriveGearRatio(GearRatio.L1)) / 60
+      );
+      driveEncoder.setPositionConversionFactor(
+        MK4i.WHEEL_CIRCUMFERENCE * MK4i.getDriveGearRatio(GearRatio.L1)
+      );
+    }
+  }
+
+  /**Configure the pivotEncoders's conversion factors to change rotations to radians */
+  public void configurePivotEncoder() {
+    if(moduleEnabled) {
+      pivotEncoder.setVelocityConversionFactor(
+        (MK4i.PIVOT_GEAR_RATIO * Math.PI * 2) / 60
+      );
+      pivotEncoder.setPositionConversionFactor(
+        MK4i.PIVOT_GEAR_RATIO * Math.PI * 2
+      );
     }
   }
 }
